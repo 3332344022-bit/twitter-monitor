@@ -10,6 +10,7 @@ NITTER_URL = os.getenv("NITTER_URL", "https://nitter.net")
 TARGET_USER = os.getenv("TARGET_USER", "aleabitoreddit")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 CHECK_INTERVAL = 4  # 轮询间隔 4 秒
+RATE_LIMIT_INTERVAL = 60  # Nitter 限流时暂停 60 秒
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=12, connect=5)
 REQUEST_HEADERS = {
     "User-Agent": (
@@ -23,14 +24,7 @@ REQUEST_HEADERS = {
 
 last_tweet_id = None
 nitter_index = 0
-DEFAULT_NITTER_URLS = (
-    "https://nitter.net",
-    "https://nitter.catsarch.com",
-    "https://nitter.kareem.one",
-    "https://nitter.poast.org",
-    "https://nitter.space",
-    "https://nitter.privacyredirect.com",
-)
+DEFAULT_NITTER_URLS = ("https://nitter.net",)
 
 
 def build_nitter_urls():
@@ -90,6 +84,7 @@ async def send_webhook(content, tweet_url):
 async def fetch_latest_tweet(session):
     """按顺序尝试多个 Nitter 实例，成功后优先复用该实例。"""
     global nitter_index
+    rate_limited = False
 
     for offset in range(len(NITTER_URLS)):
         index = (nitter_index + offset) % len(NITTER_URLS)
@@ -104,17 +99,19 @@ async def fetch_latest_tweet(session):
             ) as resp:
                 if resp.status != 200:
                     print(f"Nitter 返回 {resp.status}: {api_url}")
+                    if resp.status == 429:
+                        rate_limited = True
                     continue
                 feed_text = await resp.text()
 
             latest = parse_latest_tweet(feed_text)
             if latest:
                 nitter_index = index
-                return latest, base_url
+                return latest, base_url, rate_limited
         except Exception as e:
             print(f"Nitter 失败 {base_url}: {e}")
 
-    return None, None
+    return None, None, rate_limited
 
 
 async def main():
@@ -123,14 +120,17 @@ async def main():
         print("错误：未设置 WEBHOOK_URL 环境变量")
         return
 
-    print(f"开始监控 @{TARGET_USER}，轮询间隔 {CHECK_INTERVAL}s，Nitter: {', '.join(NITTER_URLS)}")
+    print(
+        f"开始监控 @{TARGET_USER}，轮询间隔 {CHECK_INTERVAL}s，"
+        f"限流退避 {RATE_LIMIT_INTERVAL}s，Nitter: {', '.join(NITTER_URLS)}"
+    )
     connector = aiohttp.TCPConnector(family=socket.AF_INET)
     async with aiohttp.ClientSession(connector=connector) as session:
         while True:
             try:
-                latest, used_url = await fetch_latest_tweet(session)
+                latest, used_url, rate_limited = await fetch_latest_tweet(session)
                 if not latest:
-                    await asyncio.sleep(CHECK_INTERVAL)
+                    await asyncio.sleep(RATE_LIMIT_INTERVAL if rate_limited else CHECK_INTERVAL)
                     continue
 
                 tweet_id = latest.get("id")
