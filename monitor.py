@@ -23,7 +23,14 @@ REQUEST_HEADERS = {
 
 last_tweet_id = None
 nitter_index = 0
-DEFAULT_NITTER_URLS = ("https://nitter.net",)
+DEFAULT_NITTER_URLS = (
+    "https://nitter.net",
+    "https://nitter.catsarch.com",
+    "https://nitter.kareem.one",
+    "https://nitter.poast.org",
+    "https://nitter.space",
+    "https://nitter.privacyredirect.com",
+)
 
 
 def build_nitter_urls():
