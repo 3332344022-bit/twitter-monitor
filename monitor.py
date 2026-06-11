@@ -12,8 +12,13 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 CHECK_INTERVAL = 4  # 轮询间隔 4 秒
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=12, connect=5)
 REQUEST_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; TwitterMonitor/1.0)",
-    "Accept": "application/rss+xml, application/xml, text/xml",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/125.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.7",
+    "Accept-Language": "en-US,en;q=0.9",
 }
 
 last_tweet_id = None
