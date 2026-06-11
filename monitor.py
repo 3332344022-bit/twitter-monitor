@@ -9,8 +9,8 @@ import xml.etree.ElementTree as ET
 NITTER_URL = os.getenv("NITTER_URL", "https://nitter.net")
 TARGET_USER = os.getenv("TARGET_USER", "aleabitoreddit")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-CHECK_INTERVAL = 4  # 轮询间隔 4 秒
-RATE_LIMIT_INTERVAL = 60  # Nitter 限流时暂停 60 秒
+CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "60"))  # 默认轮询间隔 60 秒
+RATE_LIMIT_INTERVAL = int(os.getenv("RATE_LIMIT_INTERVAL", "300"))  # Nitter 限流时暂停 5 分钟
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=12, connect=5)
 REQUEST_HEADERS = {
     "User-Agent": (
