@@ -1,1 +1,1 @@
-web: python monitor.py
+web: python -u monitor.py
